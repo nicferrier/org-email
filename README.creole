@@ -1,0 +1,22 @@
+org-email is a way of acknowledging that people store emails in org
+databases.
+
+Here is how I store mine:
+
+{{{
+* bill the buck
+** email
+*** billbuck@example1.com
+** partner
+*** Gillie The Girl
+* lesley lady
+** colleague @ woomedia
+*** CSS programmer
+** partner
+*** Jimmy Screws
+** email
+*** ll@example10.org
+}}}
+
+org-email offers a simple interface to use completion to insert the
+correct email address of a person in such a database.
