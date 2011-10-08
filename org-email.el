@@ -7,7 +7,7 @@
 ;;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Created: 7th October 2011
-;;; Version: 0.01
+;;; Version: 0.02
 ;;; Keywords: lisp
 
 ;; This file is NOT part of GNU Emacs.
