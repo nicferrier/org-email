@@ -1,14 +1,14 @@
-;;; org-email - use org for an email database -*- lexical-binding: t -*-
+;;; org-email.el --- use org for an email database -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2009-2011 Nic Ferrier
 
 ;; Parses emails out of org mode files in a very simple way
 
-;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
-;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
-;; Created: 5th October 2009
-;; Version: 0.64
-;; Keywords: lisp
+;;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
+;;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
+;;; Created: 7th October 2011
+;;; Version: 0.01
+;;; Keywords: lisp
 
 ;; This file is NOT part of GNU Emacs.
 
@@ -36,9 +36,6 @@
 ;; ** email
 ;; *** nferrier@gnu.org
 
-;;; Development Notes
-;; 
-
 ;;; Source code
 ;;
 ;; org-email can be found here
@@ -64,7 +61,7 @@
 
 
 (defun org-email--buffer-emails (buffer)
-  "Return all the emails in an org buffer.
+  "Return all the emails in an org BUFFER.
 
 The emails should be indicated in an org structure."
   (let ((res '()))
@@ -79,8 +76,8 @@ The emails should be indicated in an org structure."
                 (save-excursion
                   (forward-line -1)
                   (if (looking-at "^\\(\\* \\)*\\(.*\\)")
-                      (setq res (cons 
-                                 (cons (match-string-no-properties 2) email) 
+                      (setq res (cons
+                                 (cons (match-string-no-properties 2) email)
                                  res)))
                   )))))
       res)))
@@ -92,7 +89,7 @@ Returns the emails as a list.
 
 This has to read each file so it would be better to cache this
 value and check modification times and stuff like that."
-  (apply 'nconc 
+  (apply 'nconc
          (mapcar (lambda (file-name)
                    (let ((buf (find-file-noselect file-name)))
                      (org-email--buffer-emails buf)))
@@ -107,8 +104,8 @@ inserted in the BUFFER at the point marked by AT.
 All these have sensible defaults obtained by completion and the
 current buffer and point."
   (interactive (list
-                (completing-read 
-                 "name or email: " 
+                (completing-read
+                 "name or email: "
                  (org-email--all-buffer-emails))
                 (current-buffer)
                 (point)))
@@ -119,4 +116,4 @@ current buffer and point."
         (goto-char at)
         (insert (format "\"%s\" <%s>" (car email) (cdr email)))))))
 
-;;; End
+;;; org-email.el ends here
