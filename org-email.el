@@ -52,12 +52,39 @@
 
 ;;; Code:
 
+(defgroup org-email nil
+  "Options concerning email handling in Org-mode."
+  :tag "Org Email"
+  :group 'org)
 
 (defcustom org-email-files nil
   "The files that org-email will check for email addresses."
+  :group 'org-email
   :type '(choice
 	  (repeat :tag "List of files and directories" file)
 	  (file :tag "Store list in a file\n" :value "~/.agenda_files")))
+
+(defcustom org-email-add-completion-hook-mode 'message-mode
+  "The mode to add a completion keybinding hook to, if at all.
+
+If you want an email completion function for org-email to be
+added to your mode."
+  :group 'org-email
+  :type 'symbol)
+
+
+(defun org-email--init-hook ()
+  "A hook function to map a key to expansion."
+  (local-set-key "\C-c " 'org-email-do-insert)
+  )
+
+
+;; Automatically add this hook.  
+;;
+;; This probably is not the right way to do this... can we
+;; auto-configure the hook variable at compile time??
+(if org-email-add-completion-hook-mode
+    (add-hook 'message-mode-hook 'org-email--init-hook))
 
 
 (defun org-email--buffer-emails (buffer)
@@ -67,7 +94,7 @@ The emails should be indicated in an org structure."
   (let ((res '()))
     (with-current-buffer buffer
       (save-excursion
-        (beginning-of-buffer)
+        (goto-char (point-min))
         (while (re-search-forward "^\\*\\* email" nil 't)
           (if (save-excursion
                 (forward-line)
@@ -115,5 +142,18 @@ current buffer and point."
       (save-excursion
         (goto-char at)
         (insert (format "\"%s\" <%s>" (car email) (cdr email)))))))
+
+(defun org-email-do-insert ()
+  "Interactive completion intended to be bound to a keypress."
+  (interactive)
+  (let* ((thing (bounds-of-thing-at-point 'word))
+         (emails (org-email--all-buffer-emails))
+         (email (assoc 
+                 (try-completion 
+                  (buffer-substring-no-properties (car thing) (cdr thing))
+                  emails)
+                 emails)))
+    (delete-region (car thing) (cdr thing))
+    (insert (format "\"%s\" <%s>" (car email) (cdr email)))))
 
 ;;; org-email.el ends here
