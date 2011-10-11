@@ -156,6 +156,7 @@ current buffer and point."
     (insert (format "\"%s\" <%s>" (car email) (cdr email)))))
 
 (ert-deftest org-email-test-structure ()
+  "Tests that the expected structure can be navigated properly."
   (with-temp-buffer
    (insert "* bill the buck
 ** email
