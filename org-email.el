@@ -7,7 +7,7 @@
 ;;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Created: 7th October 2011
-;;; Version: 0.02
+;;; Version: 0.03
 ;;; Keywords: lisp
 
 ;; This file is NOT part of GNU Emacs.
@@ -101,8 +101,7 @@ The emails should be indicated in an org structure."
                 (looking-at "^\\(\\*\\*\\* \\)*\\([a-zA-Z0-9_.+-]+@[a-zA-Z0-9_.+-]+\\)"))
               (let ((email (match-string-no-properties 2)))
                 (save-excursion
-                  (forward-line -1)
-                  (if (looking-at "^\\(\\* \\)*\\(.*\\)")
+                  (if (re-search-backward "^\\(\\* \\)\\(.*\\)" nil 't)
                       (setq res (cons
                                  (cons (match-string-no-properties 2) email)
                                  res)))
@@ -155,5 +154,34 @@ current buffer and point."
                  emails)))
     (delete-region (car thing) (cdr thing))
     (insert (format "\"%s\" <%s>" (car email) (cdr email)))))
+
+(ert-deftest org-email-test-structure ()
+  (with-temp-buffer
+   (insert "* bill the buck
+** email
+*** billbuck@example1.com
+** partner
+*** Gillie The Girl
+* lesley lady
+** colleague @ woomedia
+*** CSS programmer
+** partner
+*** Jimmy Screws
+** email
+*** ll@example10.org")
+   (org-mode)
+   ;; Have we got the basics right?
+   (save-excursion
+     (beginning-of-buffer)
+     (should (equal "* bill the buck" 
+                    (buffer-substring-no-properties (point-min)(line-end-position)))))
+   ;; Now pull the emails and check two
+   (let* ((emails (org-email--buffer-emails (current-buffer)))
+          (bill (assoc "bill the buck" emails))
+          (lesley (assoc "lesley lady" emails)))
+     (should (equal "billbuck@example1.com" (cdr bill)))
+     (should (equal "ll@example10.org" (cdr lesley))))
+  ))
+
 
 ;;; org-email.el ends here
