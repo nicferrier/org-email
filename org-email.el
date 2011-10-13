@@ -7,7 +7,7 @@
 ;;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Created: 7th October 2011
-;;; Version: 0.03
+;;; Version: 0.04
 ;;; Keywords: lisp
 
 ;; This file is NOT part of GNU Emacs.
@@ -155,6 +155,7 @@ current buffer and point."
     (delete-region (car thing) (cdr thing))
     (insert (format "\"%s\" <%s>" (car email) (cdr email)))))
 
+(require 'ert)
 (ert-deftest org-email-test-structure ()
   "Tests that the expected structure can be navigated properly."
   (with-temp-buffer
@@ -184,5 +185,6 @@ current buffer and point."
      (should (equal "ll@example10.org" (cdr lesley))))
   ))
 
+(provide 'org-email)
 
 ;;; org-email.el ends here
