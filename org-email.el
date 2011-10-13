@@ -199,7 +199,7 @@ current buffer and point."
    (org-mode)
    ;; Have we got the basics right?
    (save-excursion
-     (beginning-of-buffer)
+     (goto-char (point-min))
      (should (equal "* bill the buck" 
                     (buffer-substring-no-properties (point-min)(line-end-position)))))
    ;; Now pull the emails and check two
