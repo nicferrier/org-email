@@ -7,7 +7,7 @@
 ;;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Created: 7th October 2011
-;;; Version: 0.04
+;;; Version: 0.05
 ;;; Keywords: lisp
 
 ;; This file is NOT part of GNU Emacs.
@@ -145,15 +145,40 @@ current buffer and point."
 (defun org-email-do-insert ()
   "Interactive completion intended to be bound to a keypress."
   (interactive)
-  (let* ((thing (bounds-of-thing-at-point 'word))
+  (let* ((thing
+          ;; Find thing before point
+          ;; Possibly multiple words
+          ;; But with no leading space
+          (save-excursion
+            (save-match-data
+              (looking-back "\\([a-zA-Z -]+\\)" (line-beginning-position) t) 
+              (let* ((d (match-data))
+                     (m (cons (car d) (cadr d))))
+                (goto-char (car m))
+                (re-search-forward "[^ ]" (cdr m) 't)
+                (cons (car (match-data)) (cdr m))))))
+         (thingstr (buffer-substring-no-properties (car thing) (cdr thing)))
          (emails (org-email--all-buffer-emails))
-         (email (assoc 
-                 (try-completion 
-                  (buffer-substring-no-properties (car thing) (cdr thing))
-                  emails)
-                 emails)))
-    (delete-region (car thing) (cdr thing))
-    (insert (format "\"%s\" <%s>" (car email) (cdr email)))))
+         (completed-email (or
+                           (try-completion thingstr emails)
+                           thingstr))
+         (email (assoc completed-email emails)))
+    (if (not email)
+        ;; This displays the full completion list in a window that we can later kill
+        (with-current-buffer (get-buffer-create "*Email Completions*")
+          (let ((standard-output (current-buffer)))
+            (display-completion-list
+             (all-completions thingstr emails)
+             thingstr)
+            (display-buffer (current-buffer))
+            (set-window-dedicated-p (get-buffer-window (current-buffer)) 't)))
+      (progn
+        ;; Kill the completion window if it exists because we now have a full completion
+        (if (get-buffer "*Email Completions*")
+            (kill-buffer (get-buffer "*Email Completions*")))
+        (delete-region (car thing) (cdr thing))
+        (insert (format "\"%s\" <%s>" (car email) (cdr email)))))))
+
 
 (require 'ert)
 (ert-deftest org-email-test-structure ()
