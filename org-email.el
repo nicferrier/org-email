@@ -7,7 +7,7 @@
 ;;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Created: 7th October 2011
-;;; Version: 0.05
+;;; Version: 0.06
 ;;; Keywords: lisp
 
 ;; This file is NOT part of GNU Emacs.
@@ -75,8 +75,7 @@ added to your mode."
 
 (defun org-email--init-hook ()
   "A hook function to map a key to expansion."
-  (local-set-key "\C-c " 'org-email-do-insert)
-  )
+  (local-set-key "\C-c " 'org-email-do-insert))
 
 
 ;; Automatically add this hook.  
@@ -104,8 +103,7 @@ The emails should be indicated in an org structure."
                   (if (re-search-backward "^\\(\\* \\)\\(.*\\)" nil 't)
                       (setq res (cons
                                  (cons (match-string-no-properties 2) email)
-                                 res)))
-                  )))))
+                                 res))))))))
       res)))
 
 (defun org-email--all-buffer-emails ()
@@ -130,9 +128,10 @@ inserted in the BUFFER at the point marked by AT.
 All these have sensible defaults obtained by completion and the
 current buffer and point."
   (interactive (list
-                (completing-read
-                 "name or email: "
-                 (org-email--all-buffer-emails))
+                (let ((completion-ignore-case 't))
+                  (completing-read
+                   "name or email: "
+                   (org-email--all-buffer-emails)))
                 (current-buffer)
                 (point)))
   (let* ((emails (org-email--all-buffer-emails))
@@ -160,13 +159,15 @@ current buffer and point."
          (thingstr (buffer-substring-no-properties (car thing) (cdr thing)))
          (emails (org-email--all-buffer-emails))
          (completed-email (or
-                           (try-completion thingstr emails)
+                           (let ((completion-ignore-case 't))
+                             (try-completion thingstr emails))
                            thingstr))
          (email (assoc completed-email emails)))
     (if (not email)
         ;; This displays the full completion list in a window that we can later kill
         (with-current-buffer (get-buffer-create "*Email Completions*")
-          (let ((standard-output (current-buffer)))
+          (let ((standard-output (current-buffer))
+                (completion-ignore-case 't))
             (display-completion-list
              (all-completions thingstr emails)
              thingstr)
