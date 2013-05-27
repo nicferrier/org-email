@@ -1,7 +1,10 @@
-org-email is a way of acknowledging that people store emails in org
-databases.
+= Org-Email for Email storage =
 
-Here is how I store mine:
+{{{org-email}}} is a way of completing email addresses from org-mode
+files.
+
+Lots of people store email contacts in OrgMode files. Here is how I
+store mine:
 
 {{{
 * bill the buck
@@ -20,6 +23,24 @@ Here is how I store mine:
 
 org-email offers a simple interface to use completion to insert the
 correct email address of a person in such a database.
+
+== Installing ==
+
+Just:
+
+{{{
+M-x package-install [RET] org-email [RET]
+}}}
+
+I presume you have [[http://marmalade-repo.org|marmalade-repo]] installed.
+
+== What files does it use? ==
+
+{{{
+M-x customize-variable [RET] org-email-files
+}}}
+
+and add whatver files you keep emails in.
 
 == Update Mon May 27 2013 ==
 I've updated the code to include org tags, so you can now use a
