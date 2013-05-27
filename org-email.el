@@ -75,11 +75,10 @@ added to your mode."
   :group 'org-email
   :type 'symbol)
 
-
+;;;###autoload
 (defun org-email--init-hook ()
   "A hook function to map a key to expansion."
   (local-set-key "\C-c " 'org-email-do-insert))
-
 
 ;; Automatically add this hook.  
 ;;
@@ -183,6 +182,7 @@ current buffer and point."
          (email (assoc name-or-email emails)))
     (org-email--insert email buffer at)))
 
+;;;###autoload
 (defun org-email-do-insert ()
   "Interactive completion intended to be bound to a keypress."
   (interactive)
