@@ -25,17 +25,6 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary:
-;;
-;; This is a simple org-mode add on that allows the use of org mode as
-;; an email database.
-;;
-;; Store emails in org structure like this:
-;;
-;; * Nic Ferrier
-;; ** email
-;; *** nferrier@gnu.org
-
 ;;; Source code
 ;;
 ;; org-email can be found here
@@ -49,8 +38,20 @@
 ;;
 ;; for private functions and for private variables.
 
+;;; Commentary:
+;;
+;; This is a simple org-mode add on that allows the use of org mode as
+;; an email database.
+;;
+;; Store emails in org structure like this:
+;;
+;; * Nic Ferrier
+;; ** email
+;; *** nferrier@gnu.org
 
 ;;; Code:
+
+(require 'cl) ; we use labels
 
 (defgroup org-email nil
   "Options concerning email handling in Org-mode."
