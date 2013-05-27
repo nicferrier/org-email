@@ -63,7 +63,9 @@
   :group 'org-email
   :type '(choice
 	  (repeat :tag "List of files and directories" file)
-	  (file :tag "Store list in a file\n" :value "~/.agenda_files")))
+	  (file
+           :tag "Store list in a file\n"
+           :value "~/.agenda_files")))
 
 (defcustom org-email-add-completion-hook-mode 'message-mode
   "The mode to add a completion keybinding hook to, if at all.
