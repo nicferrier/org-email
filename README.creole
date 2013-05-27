@@ -20,3 +20,16 @@ Here is how I store mine:
 
 org-email offers a simple interface to use completion to insert the
 correct email address of a person in such a database.
+
+== Update Mon May 27 2013 ==
+I've updated the code to include org tags, so you can now use a
+structure like this:
+
+{{{
+* list of people
+** nic
+*** nicferrier@example.com :email:
+}}}
+
+Anything tagged {{{:email:}}} will be used. This does not let you use
+a name unfortunately. But it's still useful.

@@ -7,7 +7,7 @@
 ;;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;;; Created: 7th October 2011
-;;; Version: 0.06
+;;; Version: 0.1.0
 ;;; Keywords: lisp
 
 ;; This file is NOT part of GNU Emacs.
@@ -85,12 +85,41 @@ added to your mode."
 (if org-email-add-completion-hook-mode
     (add-hook 'message-mode-hook 'org-email--init-hook))
 
+(defun org-email--by-tags (buffer)
+  "Get a list of emails by tags."
+  (mapcar
+   (lambda (e) (cons e e))
+   (-uniq
+    (labels ((tags-list (p)
+               (when (org-entry-get p "TAGS")
+                 (split-string (org-entry-get p "TAGS") ":")))
+             (email-p (p)
+               (equal "email"
+                      (car (-filter
+                            (lambda (s)
+                              (not (equal s "")))
+                            (tags-list (point))))))
+             (email-extract (text)
+               (string-match
+                "[^A-Za0z0-9.]\\([A-Za0z0-9@.]+\\)[^A-Za0z0-9.]"
+                text)
+               (match-string 1 text)))
+      (with-current-buffer (get-buffer "contacts.org.gpg")
+        (save-excursion
+                 (goto-char (point-min))
+                 (loop while (< (line-end-position) (point-max))
+                    do (forward-line)
+                    if (email-p (point))
+                    collect (email-extract
+                             (buffer-substring
+                              (line-beginning-position)
+                              (line-end-position))))))))))
 
 (defun org-email--buffer-emails (buffer)
   "Return all the emails in an org BUFFER.
 
 The emails should be indicated in an org structure."
-  (let ((res '()))
+  (let ((res (org-email--by-tags buffer)))
     (with-current-buffer buffer
       (save-excursion
         (goto-char (point-min))
@@ -114,10 +143,23 @@ Returns the emails as a list.
 This has to read each file so it would be better to cache this
 value and check modification times and stuff like that."
   (apply 'nconc
-         (mapcar (lambda (file-name)
-                   (let ((buf (find-file-noselect file-name)))
-                     (org-email--buffer-emails buf)))
-                 (apply 'nconc (list org-email-files)))))
+         (mapcar
+          (lambda (file-name)
+            (let ((buf (find-file-noselect file-name)))
+              (org-email--buffer-emails buf)))
+          (apply 'nconc (list org-email-files)))))
+
+(defun org-email--insert (email buffer pt)
+  "Insert EMAIL into BUFFER at PT."
+  (with-current-buffer buffer
+    (save-excursion
+      (goto-char pt)
+      (let ((addr (car email))
+            (name (cdr email)))
+        (if (equal addr name)
+            (insert (format "<%s>" addr))
+            ;; Else
+            (insert (format "\"%s\" <%s>" name addr)))))))
 
 (defun org-email-insert (name-or-email &optional buffer at)
   "Insert the specified NAME-OR-EMAIL in the BUFFER.
@@ -136,10 +178,7 @@ current buffer and point."
                 (point)))
   (let* ((emails (org-email--all-buffer-emails))
          (email (assoc name-or-email emails)))
-    (with-current-buffer buffer
-      (save-excursion
-        (goto-char at)
-        (insert (format "\"%s\" <%s>" (car email) (cdr email)))))))
+    (org-email--insert email buffer at)))
 
 (defun org-email-do-insert ()
   "Interactive completion intended to be bound to a keypress."
@@ -178,38 +217,7 @@ current buffer and point."
         (if (get-buffer "*Email Completions*")
             (kill-buffer (get-buffer "*Email Completions*")))
         (delete-region (car thing) (cdr thing))
-        (insert (format "\"%s\" <%s>" (car email) (cdr email)))))))
-
-
-(require 'ert)
-(ert-deftest org-email-test-structure ()
-  "Tests that the expected structure can be navigated properly."
-  (with-temp-buffer
-   (insert "* bill the buck
-** email
-*** billbuck@example1.com
-** partner
-*** Gillie The Girl
-* lesley lady
-** colleague @ woomedia
-*** CSS programmer
-** partner
-*** Jimmy Screws
-** email
-*** ll@example10.org")
-   (org-mode)
-   ;; Have we got the basics right?
-   (save-excursion
-     (goto-char (point-min))
-     (should (equal "* bill the buck" 
-                    (buffer-substring-no-properties (point-min)(line-end-position)))))
-   ;; Now pull the emails and check two
-   (let* ((emails (org-email--buffer-emails (current-buffer)))
-          (bill (assoc "bill the buck" emails))
-          (lesley (assoc "lesley lady" emails)))
-     (should (equal "billbuck@example1.com" (cdr bill)))
-     (should (equal "ll@example10.org" (cdr lesley))))
-  ))
+        (org-email--insert email (current-buffer) (point))))))
 
 (provide 'org-email)
 
