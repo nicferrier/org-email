@@ -34,13 +34,19 @@ M-x package-install [RET] org-email [RET]
 
 I presume you have [[http://marmalade-repo.org|marmalade-repo]] installed.
 
-== What files does it use? ==
+== What contact files does it use? ==
 
 {{{
 M-x customize-variable [RET] org-email-files
 }}}
 
 and add whatver files you keep emails in.
+
+== Using ==
+
+Add the function {{{org-email--init-hook}}} to whatever mode you want
+to complete emails in and it will bind {{{org-email-do-insert}}} to
+{{{C-SPC}}}.
 
 == Update Mon May 27 2013 ==
 I've updated the code to include org tags, so you can now use a
