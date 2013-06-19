@@ -7,7 +7,7 @@
 ;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Created: 7th October 2011
-;; Version: 0.1.0
+;; Version: 1.0
 ;; Url: https://github.com/nicferrier/org-email
 ;; Keywords: lisp
 
