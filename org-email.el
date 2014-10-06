@@ -62,7 +62,7 @@
 (require 'cl) ; we use labels
 (require 'org-element)
 (require 'dash)
-(require 'shadchen)
+(require 'shadchen) ;; is not in marmalade so this can't be uploaded yet
 
 
 (defgroup org-email nil
