@@ -7,7 +7,7 @@
 ;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Created: 7th October 2011
-;; Version: 1.0
+;; Version: 2.0
 ;; Url: https://github.com/nicferrier/org-email
 ;; Keywords: lisp
 
@@ -35,7 +35,7 @@
 ;;
 ;; This codes uses the Emacs style of:
 ;;
-;;    org-email--private-function
+;;    org-email/private-function
 ;;
 ;; for private functions and for private variables.
 
@@ -49,10 +49,21 @@
 ;; * Nic Ferrier
 ;; ** email
 ;; *** nferrier@gnu.org
+;;
+;; or use the `email' tag:
+;;
+;; * Nic Ferrier
+;; ** nferrier@gnu.org                      :email:
+;;
+;; This code searches through both when making completions.
 
 ;;; Code:
 
 (require 'cl) ; we use labels
+(require 'org-element)
+(require 'dash)
+(require 'shadchen)
+
 
 (defgroup org-email nil
   "Options concerning email handling in Org-mode."
@@ -76,8 +87,101 @@ added to your mode."
   :group 'org-email
   :type 'symbol)
 
+
+(defun org-el/tree-map (org-elements)
+  "Map over ORG-ELEMENTS and produce a more compact form."
+  (cl-labels
+      ((map-elements (nodes)
+         (mapcar
+          (lambda (element)
+            (match
+             element
+             ((list 'section props (list 'paragraph props text))
+              (list (substring-no-properties text 0 (1- (length text))) nil))
+             ((list 'section props (list 'comment _))
+              nil)
+             ((list 'headline (list :raw-value data (tail props)) (tail nodes))
+              (apply 'list data (plist-get props :tags) (map-elements nodes)))
+             ((list 'headline (list :raw-value data (tail props)))
+              (list data (plist-get props :tags)))))
+          nodes)))
+    (map-elements (cddr org-elements))))
+
+(defun org-el/struct-map (org-file)
+  "Proxy taking ORG-FILE for `org-el/tree-map'."
+  (org-el-tree-map
+   (with-current-buffer (find-file-noselect org-file)
+     (org-element-parse-buffer))))
+
+(defmacro with-escape (escape &rest body)
+  "Evaluate BODY, return the value passed to ESCAPE.
+
+This is just like `catch'/`throw' but the returned value of the
+BODY is discarded unless there is a non-local exit through
+ESCAPE."
+  (declare (indent 1))
+  (let ((tag (make-symbol "escapetag"))
+        (escape-type (make-symbol "escapetype"))
+        (catch-value (make-symbol "catchvalue")))
+    `(noflet ((,escape (value)
+                (throw (quote ,tag) (cons (quote ,escape-type) value))))
+       (let ((,catch-value 
+              (catch (quote ,tag)
+                ,@body)))
+         (and (consp ,catch-value)
+              (eq (quote ,escape-type) (car-safe ,catch-value))
+              (cdr-safe ,catch-value))))))
+
+;; (with-escape get-out
+;;   (dolist (v (number-sequence 1 10))
+;;     (when (equal v 9) (get-out v))))
+
+(defun org-email-list (org-file)
+  "Make an alist of names and emails from ORG-FILE."
+  (cl-labels
+      ((tag-search (nodes tag)
+         (with-escape escape
+             (--map
+              (match
+               it
+               ((list text tags (tail nodes))
+                (if (member tag tags)
+                    (escape text)
+                    (tag-search nodes tag)))
+               ((list text tags)
+                (when (member tag tags)
+                  (escape text))))
+              nodes)))
+       (branch-search (nodes tag)
+         (with-escape escape
+           (--map
+            (match
+             it
+             ((list text _ (tail nodes))
+              (if (equal tag text)
+                  (escape (caar nodes))
+                  (branch-search nodes tag)))
+             ((list text _)
+              (when (equal tag text) nil)))
+            nodes))))
+    (let* ((tree (org-el-struct-map org-file)))
+      (-filter (lambda (kv) (stringp (cdr kv)))
+               (--map
+                (when it
+                  (match
+                   it
+                   ((list text _ (tail nodes))
+                    (print (cons "main" nodes) (get-buffer-create "testnodes"))
+                    (cons
+                     text
+                     (or
+                      (branch-search nodes "email")
+                      (tag-search nodes "email"))))))
+                tree)))))
+
+
 ;;;###autoload
-(defun org-email--init-hook ()
+(defun org-email/init-hook ()
   "A hook function to map a key to expansion."
   (local-set-key "\C-c " 'org-email-do-insert))
 
@@ -85,74 +189,33 @@ added to your mode."
 ;;
 ;; This probably is not the right way to do this... can we
 ;; auto-configure the hook variable at compile time??
-(if org-email-add-completion-hook-mode
-    (add-hook 'message-mode-hook 'org-email--init-hook))
+(when org-email-add-completion-hook-mode
+  (add-hook 'message-mode-hook 'org-email/init-hook))
 
-(defun org-email--by-tags (buffer)
-  "Get a list of emails by tags."
-  (mapcar
-   (lambda (e) (cons e e))
-   (-uniq
-    (labels ((tags-list (p)
-               (when (org-entry-get p "TAGS")
-                 (split-string (org-entry-get p "TAGS") ":")))
-             (email-p (p)
-               (equal "email"
-                      (car (-filter
-                            (lambda (s)
-                              (not (equal s "")))
-                            (tags-list (point))))))
-             (email-extract (text)
-               (string-match
-                "[^A-Za0z0-9.]\\([A-Za0z0-9@.]+\\)[^A-Za0z0-9.]"
-                text)
-               (match-string 1 text)))
-      (with-current-buffer (get-buffer "contacts.org.gpg")
-        (save-excursion
-                 (goto-char (point-min))
-                 (loop while (< (line-end-position) (point-max))
-                    do (forward-line)
-                    if (email-p (point))
-                    collect (email-extract
-                             (buffer-substring
-                              (line-beginning-position)
-                              (line-end-position))))))))))
 
-(defun org-email--buffer-emails (buffer)
-  "Return all the emails in an org BUFFER.
-
-The emails should be indicated in an org structure."
-  (let ((res (org-email--by-tags buffer)))
-    (with-current-buffer buffer
-      (save-excursion
-        (goto-char (point-min))
-        (while (re-search-forward "^\\*\\* email" nil 't)
-          (if (save-excursion
-                (forward-line)
-                (looking-at "^\\(\\*\\*\\* \\)*\\([a-zA-Z0-9_.+-]+@[a-zA-Z0-9_.+-]+\\)"))
-              (let ((email (match-string-no-properties 2)))
-                (save-excursion
-                  (if (re-search-backward "^\\(\\* \\)\\(.*\\)" nil 't)
-                      (setq res (cons
-                                 (cons (match-string-no-properties 2) email)
-                                 res))))))))
-      res)))
-
-(defun org-email--all-buffer-emails ()
+(defun org-email/all-buffer-emails ()
   "Get emails from *all* the ORG-EMAIL-FILES.
 
 Returns the emails as a list.
 
 This has to read each file so it would be better to cache this
 value and check modification times and stuff like that."
-  (apply 'nconc
-         (mapcar
-          (lambda (file-name)
-            (let ((buf (find-file-noselect file-name)))
-              (org-email--buffer-emails buf)))
-          (apply 'nconc (list org-email-files)))))
+  (->> org-email-files
+    (--map (org-email-list it))
+    (-flatten)
+    ;; Expand the list into one like:
+    ;;    (name (email . name))
+    ;;    (email (email .name))
+    (--map
+     (match
+      it
+      ((cons name email)
+       (list (list (downcase name) (cons email name))
+             (list (downcase email) (cons email name))))))
+    (-flatten)
+    (-partition 2)))
 
-(defun org-email--insert (email buffer pt)
+(defun org-email/insert (email buffer pt)
   "Insert EMAIL into BUFFER at PT."
   (with-current-buffer buffer
     (save-excursion
@@ -173,15 +236,24 @@ inserted in the BUFFER at the point marked by AT.
 All these have sensible defaults obtained by completion and the
 current buffer and point."
   (interactive (list
-                (let ((completion-ignore-case 't))
-                  (completing-read
-                   "name or email: "
-                   (org-email--all-buffer-emails)))
+                (let ((completion-ignore-case 't)
+                      (completions
+                       (org-email/all-buffer-emails)))
+                  (car 
+                   (kva
+                    (completing-read "name or email: " completions)
+                    completions)))
                 (current-buffer)
                 (point)))
-  (let* ((emails (org-email--all-buffer-emails))
-         (email (assoc name-or-email emails)))
-    (org-email--insert email buffer at)))
+  (org-email/insert
+   ;; Avoid the completion if we've done it interactively
+   (if (consp name-or-email)
+       name-or-email
+       ;; Else do the completion
+       (let* ((emails (org-email/all-buffer-emails)))
+         (kva name-or-email emails)))
+   buffer
+   at))
 
 ;;;###autoload
 (defun org-email-do-insert ()
@@ -200,12 +272,12 @@ current buffer and point."
                 (re-search-forward "[^ ]" (cdr m) 't)
                 (cons (car (match-data)) (cdr m))))))
          (thingstr (buffer-substring-no-properties (car thing) (cdr thing)))
-         (emails (org-email--all-buffer-emails))
+         (emails (org-email/all-buffer-emails))
          (completed-email (or
                            (let ((completion-ignore-case 't))
                              (try-completion thingstr emails))
                            thingstr))
-         (email (assoc completed-email emails)))
+         (email (car (kva completed-email emails))))
     (if (not email)
         ;; This displays the full completion list in a window that we can later kill
         (with-current-buffer (get-buffer-create "*Email Completions*")
@@ -215,13 +287,14 @@ current buffer and point."
              (all-completions thingstr emails)
              thingstr)
             (display-buffer (current-buffer))
-            (set-window-dedicated-p (get-buffer-window (current-buffer)) 't)))
+            ;;(set-window-dedicated-p (get-buffer-window (current-buffer)) 't)
+            ))
       (progn
         ;; Kill the completion window if it exists because we now have a full completion
         (if (get-buffer "*Email Completions*")
             (kill-buffer (get-buffer "*Email Completions*")))
         (delete-region (car thing) (cdr thing))
-        (org-email--insert email (current-buffer) (point))))))
+        (org-email/insert email (current-buffer) (point))))))
 
 (provide 'org-email)
 
