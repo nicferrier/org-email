@@ -7,6 +7,7 @@
 ;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Created: 7th October 2011
+;; Package-requires: ((shadchen "1.1")(dash "2.9.0")(noflet "0.0.12"))
 ;; Version: 2.0
 ;; Url: https://github.com/nicferrier/org-email
 ;; Keywords: lisp
@@ -59,11 +60,10 @@
 
 ;;; Code:
 
-(require 'cl) ; we use labels
+(require 'cl-lib) ; we use labels
 (require 'org-element)
 (require 'dash)
-(require 'shadchen) ;; is not in marmalade so this can't be uploaded yet
-
+(require 'shadchen) 
 
 (defgroup org-email nil
   "Options concerning email handling in Org-mode."
