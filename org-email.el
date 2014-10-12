@@ -292,6 +292,17 @@ current buffer and point."
         (delete-region (car thing) (cdr thing))
         (org-email/insert email (current-buffer) (point))))))
 
+(defun org-email-collect ()
+  "Try and get the email at point."
+  (interactive)
+  (let ((email (thing-at-point 'email)))
+    (when email
+      (with-current-buffer (find-file-noselect (car org-email-files))
+        (goto-char (point-max))
+        (newline)
+        (insert "* \n** " email " :email:")
+        (pop-to-buffer (current-buffer))))))
+
 (provide 'org-email)
 
 ;;; org-email.el ends here
