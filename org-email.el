@@ -119,7 +119,9 @@ added to your mode."
 This is just like `catch'/`throw' but the returned value of the
 BODY is discarded unless there is a non-local exit through
 ESCAPE."
-  (declare (indent 1))
+  (declare
+   (debug (sexp &rest form))
+   (indent 1))
   (let ((tag (make-symbol "escapetag"))
         (escape-type (make-symbol "escapetype"))
         (catch-value (make-symbol "catchvalue")))
