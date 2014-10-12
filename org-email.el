@@ -100,16 +100,16 @@ added to your mode."
               (list (substring-no-properties text 0 (1- (length text))) nil))
              ((list 'section props (list 'comment _))
               nil)
-             ((list 'headline (list :raw-value data (tail props)) (tail nodes))
-              (apply 'list data (plist-get props :tags) (map-elements nodes)))
-             ((list 'headline (list :raw-value data (tail props)))
-              (list data (plist-get props :tags)))))
+             ((list 'headline (plist :raw-value title :tags tags) (tail nodes))
+              (apply 'list title tags (map-elements nodes)))
+             ((list 'headline (list :raw-value data (plist :tags tags)))
+              (list data tags))))
           nodes)))
     (map-elements (cddr org-elements))))
 
 (defun org-el/struct-map (org-file)
   "Proxy taking ORG-FILE for `org-el/tree-map'."
-  (org-el-tree-map
+  (org-el/tree-map
    (with-current-buffer (find-file-noselect org-file)
      (org-element-parse-buffer))))
 
@@ -140,38 +140,32 @@ ESCAPE."
   "Make an alist of names and emails from ORG-FILE."
   (cl-labels
       ((tag-search (nodes tag)
-         (with-escape escape
-             (--map
-              (match
-               it
-               ((list text tags (tail nodes))
-                (if (member tag tags)
-                    (escape text)
-                    (tag-search nodes tag)))
-               ((list text tags)
-                (when (member tag tags)
-                  (escape text))))
-              nodes)))
+           (cl-labels ((tag-test (lst) (member tag lst)))
+             (with-escape escape
+               (--map
+                (match
+                 it
+                 ((list text (? #'tag-test) (tail _)) (escape text))
+                 ((list text (? #'tag-test)) (escape text))
+                 ((list text tags (tail nodes)) (tag-search nodes tag)))
+                nodes))))
        (branch-search (nodes tag)
-         (with-escape escape
-           (--map
-            (match
-             it
-             ((list text _ (tail nodes))
-              (if (equal tag text)
-                  (escape (caar nodes))
-                  (branch-search nodes tag)))
-             ((list text _)
-              (when (equal tag text) nil)))
-            nodes))))
-    (let* ((tree (org-el-struct-map org-file)))
+           (cl-labels ((tag-test (lst) (member tag lst)))
+             (with-escape escape
+               (--map
+                (match
+                 it
+                 ((list text (? #'tag-test) (tail _)) (escape text))
+                 ((list text (? #'tag-test)) (escape text))
+                 ((list text tags (tail nodes)) (tag-search nodes tag)))
+                nodes)))))
+    (let* ((tree (org-el/struct-map org-file)))
       (-filter (lambda (kv) (stringp (cdr kv)))
                (--map
                 (when it
                   (match
                    it
                    ((list text _ (tail nodes))
-                    (print (cons "main" nodes) (get-buffer-create "testnodes"))
                     (cons
                      text
                      (or
