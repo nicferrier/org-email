@@ -1,0 +1,17 @@
+* nic ferrier
+** 0758 0832 785                                                     :mobile:
+** nic@ferrier.me.uk                                                  :email:
+** My house                                                         :address:
+In the middle
+My Street
+Fun Town
+* J Love
+** met at some place
+*** product/business side person
+** j.luv@somemail.com                                                 :email:
+* Bob Towney
+** B.towney@digital.place.email.uk                                    :email:
+** notes
+*** met at lah dee dah
+* Some Guy
+** guy@some.org                                                       :email:
