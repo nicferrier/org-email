@@ -7,8 +7,8 @@
 ;; Author: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Created: 7th October 2011
-;; Package-requires: ((shadchen "1.1")(dash "2.9.0")(noflet "0.0.12"))
-;; Version: 2.0
+;; Package-requires: ((shadchen "1.2")(dash "2.9.0")(noflet "0.0.12"))
+;; Version: 3.0.0
 ;; Url: https://github.com/nicferrier/org-email
 ;; Keywords: lisp
 
@@ -292,6 +292,7 @@ current buffer and point."
         (delete-region (car thing) (cdr thing))
         (org-email/insert email (current-buffer) (point))))))
 
+;;;###autoload
 (defun org-email-collect ()
   "Try and get the email at point."
   (interactive)
