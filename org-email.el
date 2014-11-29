@@ -269,7 +269,7 @@ current buffer and point."
                 (cons (car (match-data)) (cdr m))))))
          (thingstr (buffer-substring-no-properties (car thing) (cdr thing)))
          (emails (org-email/all-buffer-emails))
-         (completed-email (or
+         (completed-email (and
                            (let ((completion-ignore-case 't))
                              (try-completion thingstr emails))
                            thingstr))
