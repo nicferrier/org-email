@@ -8,7 +8,7 @@
 ;; Maintainer: Nic Ferrier <nferrier@ferrier.me.uk>
 ;; Created: 7th October 2011
 ;; Package-requires: ((shadchen "1.2")(dash "2.9.0")(noflet "0.0.12"))
-;; Version: 3.0.0
+;; Version: 3.0.1
 ;; Url: https://github.com/nicferrier/org-email
 ;; Keywords: lisp
 
